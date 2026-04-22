@@ -6,15 +6,23 @@ using Google.GenAI.Types;
 public class GeminiClient(string apiKey)
 {
     private readonly Client client = new(false, apiKey);
+    private readonly Content contents = new()
+    {
+        Role = "user",
+        Parts = []
+    };
 
 
     public async Task<GenerateContentResponse> GenerateContentResponse(string content)
     {
         try
         {
+
+            contents.Parts!.Add(new Part() { Text = content });
+
             var response = await client.Models.GenerateContentAsync(
                 model: "gemini-2.5-flash",
-                contents: content
+                contents: contents
             );
 
             return response;
