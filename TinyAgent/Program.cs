@@ -39,7 +39,9 @@ class Program
     {
         FileService fileService = new();
 
-        fileService.GetFilesInfo(workingDirectory: "SmallScripts");
-        await CallAI(args);
+        // fileService.GetFilesInfo(workingDirectory: "SmallScripts");
+        // fileService.GetFileContent(workingDirectory: "SmallScripts", filePath: "lorem.txts");
+        fileService.WriteFile(workingDirectory: "SmallScripts", filePath: "Qnko.cs", content: """Console.WriteLine("agent writing shit");""");
+        // await CallAI(args);
     }
 }
