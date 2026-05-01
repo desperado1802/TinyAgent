@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO.Enumeration;
 
 namespace Agent.Core.Services;
@@ -97,6 +98,8 @@ public class FileService : IFileService
         return content;
     }
 
+
+
     public string WriteFile(string workingDirectory, string filePath, string content)
     {
         var absoluteDir = Path.GetFullPath(workingDirectory);
@@ -137,5 +140,92 @@ public class FileService : IFileService
         }
 
     }
+
+
+
+    public string RunCSFile(string workingDirectory, string filePath, string[]? args = null)
+    {
+        var absoluteDir = Path.GetFullPath(workingDirectory);
+        var absoluteFilePath = Path.GetFullPath(Path.Combine(absoluteDir, filePath));
+
+        if (!Directory.Exists(absoluteDir))
+        {
+            Console.WriteLine($"This absolute dir does not exist {absoluteDir}");
+            return $"This absolute dir does not exist {absoluteDir}";
+        }
+
+        if (!absoluteFilePath.StartsWith(absoluteDir))
+        {
+            return $"Error: {filePath} is outside the allowed working directory!";
+        }
+
+        if (!filePath.EndsWith(".cs"))
+        {
+            return $"Error: {filePath} does not end with .cs";
+        }
+
+        Console.WriteLine(absoluteDir);
+        Console.WriteLine(absoluteFilePath);
+
+        try
+        {
+            using Process process = new();
+
+            string arguments;
+            if (args?.Length > 0)
+            {
+                arguments = $"run \"{absoluteFilePath}\" -- {args}";
+            }
+            else
+            {
+                arguments = $"run {absoluteFilePath}";
+            }
+
+            var StartInfo = new ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = $"run \"{absoluteFilePath}\" -- {args}",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = absoluteDir,
+            };
+
+            process.StartInfo = StartInfo;
+
+            process.Start();
+            int timeoutMS = 10000;
+
+            if (process.WaitForExit(timeoutMS))
+            {
+                var error = process.StandardError.ReadToEnd();
+                var output = process.StandardOutput.ReadToEnd();
+
+
+
+                if (!string.IsNullOrEmpty(error))
+                {
+                    Console.WriteLine($"Execution error: {error}");
+                    return $"Execution error: {error}";
+                }
+                Console.WriteLine($"Output: {output}");
+                return $"Output: {output}";
+            }
+            else
+            {
+                Console.WriteLine($"Error: timeout of {timeoutMS}ms reached");
+                return $"Error: timeout of {timeoutMS}ms reached";
+            }
+
+        }
+        catch (Exception ex)
+        {
+            return $"Error: could not run {filePath}, error: {ex.Message}";
+        }
+
+    }
+
+
 
 }

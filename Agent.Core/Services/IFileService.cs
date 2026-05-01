@@ -7,4 +7,6 @@ interface IFileService
     public string GetFileContent(string workingDirectory, string filePath);
 
     public string WriteFile(string workingDirectory, string filePath, string content);
+
+    public string RunCSFile(string workingDirectory, string filePath, string[]? args);
 }
