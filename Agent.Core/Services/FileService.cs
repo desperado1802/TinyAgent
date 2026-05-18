@@ -19,11 +19,13 @@ public class FileService : IFileService
 
         if (!workingDir.StartsWith(absoluteDir))
         {
+            Console.WriteLine($"Error {workingDir} is outside the allowed working directory!");
             return $"Error {workingDir} is outside the allowed working directory!";
         }
 
         if (!Directory.Exists(workingDir))
         {
+            Console.WriteLine($"Error: Directory '{directory}' not found.");
             return $"Error: Directory '{directory}' not found.";
         }
 
