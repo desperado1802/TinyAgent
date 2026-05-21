@@ -3,6 +3,7 @@
 using System;
 using Agent.Core.Services;
 using Agent.Core.Tools;
+using Google.GenAI.Types;
 
 public class Orchestrator
 {
@@ -10,6 +11,12 @@ public class Orchestrator
     private readonly bool verbose;
     private readonly FileService fileService;
     private readonly ToolDispatcher toolDispatcher;
+
+    private readonly Content contents = new()
+    {
+        Role = "user",
+        Parts = []
+    };
 
     public Orchestrator(string apiKey, bool verbose)
     {
@@ -23,18 +30,64 @@ public class Orchestrator
     public async Task GenerateContent(string content)
     {
 
-        var geminiService = new GeminiClient(apiKey, toolDispatcher);
+        var geminiService = new GeminiClient(apiKey);
 
+        contents.Parts!.Add(new Part() { Text = content });
+        var chatHistory = new List<Content> { contents };
         try
         {
-            var res = await geminiService.GenerateContentResponse(content);
-
-            Console.WriteLine($"Gemini says: {res.Text}");
-
-            if (verbose)
+            for (var i = 0; i < 20; i++)
             {
-                Console.WriteLine($"Input tokens used: {res?.UsageMetadata?.PromptTokenCount}");
-                Console.WriteLine($"Output tokens used: {res?.UsageMetadata?.CandidatesTokenCount}");
+
+                var response = await geminiService.GenerateContentResponse(chatHistory);
+
+                if (response.FunctionCalls?.Count > 0)
+                {
+                    if (response.Candidates?.Count > 0 && response?.Candidates?[0].Content != null)
+                    {
+                        foreach (var candidate in response.Candidates)
+                        {
+                            if (candidate.Content != null)
+                            {
+                                chatHistory.Add(candidate.Content);
+                            }
+                        }
+                    }
+                    else
+                    {
+
+                        var modelTurn = new Content()
+                        {
+                            Role = "model",
+                            Parts = response?.FunctionCalls.Select(func => new Part { FunctionCall = func }).ToList()
+                        };
+                        chatHistory.Add(modelTurn);
+                    }
+
+
+
+                    foreach (var functionCall in response!.FunctionCalls)
+                    {
+                        var functionCallResponse = toolDispatcher.CallFunction(functionCall);
+
+                        chatHistory.Add(functionCallResponse);
+
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(response?.Text))
+                {
+
+                    Console.WriteLine($"Gemini says: {response.Text}");
+                    break;
+                }
+
+                if (verbose)
+                {
+                    Console.WriteLine($"Input tokens used: {response?.UsageMetadata?.PromptTokenCount}");
+                    Console.WriteLine($"Output tokens used: {response?.UsageMetadata?.CandidatesTokenCount}");
+                }
+
             }
         }
         catch (Exception ex)

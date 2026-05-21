@@ -4,19 +4,12 @@ using Agent.Core.Tools;
 using Google.GenAI;
 using Google.GenAI.Types;
 
-public class GeminiClient(string apiKey, ToolDispatcher dispatcher)
+public class GeminiClient(string apiKey)
 {
     private readonly Client client = new(false, apiKey);
-    private readonly Content contents = new()
-    {
-        Role = "user",
-        Parts = []
-    };
 
 
-
-
-    public async Task<GenerateContentResponse> GenerateContentResponse(string content)
+    public async Task<GenerateContentResponse> GenerateContentResponse(List<Content> chatHistory)
     {
         try
         {
@@ -36,24 +29,13 @@ public class GeminiClient(string apiKey, ToolDispatcher dispatcher)
                 Tools = ToolRegistry.GetAvailableTools()
             };
 
-
-            contents.Parts!.Add(new Part() { Text = content });
-
             var response = await client.Models.GenerateContentAsync(
                 // model: "gemini-2.5-flash",
                 // model: "gemini-3.1-flash-lite",
                 model: "gemini-3-flash-preview",
-                contents: contents,
+                contents: chatHistory,
                 config: config
             );
-
-            if (response.FunctionCalls?.Count > 0)
-            {
-                foreach (var functionCall in response.FunctionCalls)
-                {
-                    dispatcher.CallFunction(functionCall);
-                }
-            }
 
             return response;
         }
