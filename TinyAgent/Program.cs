@@ -39,10 +39,6 @@ class Program
     {
         FileService fileService = new();
 
-        // fileService.GetFilesInfo(workingDirectory: "SmallScripts");
-        // fileService.GetFileContent(workingDirectory: "SmallScripts", filePath: "lorem.txts");
-        // fileService.WriteFile(workingDirectory: "SmallScripts", filePath: "karen.txt", content: """Console.WriteLine("agent writing shit");""");
-        // fileService.RunCSFile(workingDirectory: "SmallScripts", filePath: "Test.cs");
         await CallAI(args);
     }
 }
